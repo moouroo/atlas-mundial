@@ -22,33 +22,109 @@ let countryLayer, countryFeatures=[], worksByCountry={};
 const norm=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
 const aliases={usa:'Estados Unidos',unitedstates:'Estados Unidos',unitedstatesofamerica:'Estados Unidos',russia:'Rússia',southafrica:'África do Sul',southkorea:'Coreia do Sul',northkorea:'Coreia do Norte',ivorycoast:'Costa do Marfim',czechia:'Chéquia',democraticrepublicofthecongo:'República Democrática do Congo',congo:'República do Congo',iran:'Irã',syria:'Síria',turkiye:'Turquia',vietnam:'Vietnã',laos:'Laos',bolivia:'Bolívia',venezuela:'Venezuela',tanzania:'Tanzânia',moldova:'Moldávia',brunei:'Brunei',taiwan:'Taiwan',brazil:'Brasil',germany:'Alemanha'};
 
+
+function countryNames(f) {
+  const p = f && f.properties ? f.properties : {};
+  const names = new Set();
+
+  const addName = value => {
+    if (!value) return;
+    const n = norm(String(value));
+    if (!n) return;
+
+    names.add(n);
+
+    if (aliases[n]) names.add(norm(aliases[n]));
+
+    for (const [alias, target] of Object.entries(aliases)) {
+      if (norm(target) === n) names.add(norm(alias));
+    }
+  };
+
+  [
+    p.ADMIN, p.name, p.name_en, p.NAME,
+    p.NAME_EN, p.name_long, p.FORMAL_EN
+  ].forEach(addName);
+
+  const codes = [p.ISO_A2_EH, p.ISO_A2]
+    .map(v => String(v || '').toUpperCase())
+    .filter(v => /^[A-Z]{2}$/.test(v));
+
+  for (const code of codes) {
+    for (const locale of ['pt-BR', 'en']) {
+      try {
+        const displayName = new Intl.DisplayNames(
+          [locale], { type: 'region' }
+        ).of(code);
+
+        if (displayName && displayName !== code) {
+          addName(displayName);
+        }
+      } catch (e) {}
+    }
+  }
+
+  return names;
+}
+
 function propsName(f) {
   const p = f.properties || {};
+  const codes = [p.ISO_A2_EH, p.ISO_A2]
+    .map(v => String(v || '').toUpperCase())
+    .filter(v => /^[A-Z]{2}$/.test(v));
 
-  const codigos = [p.ISO_A2, p.ISO_A2_EH]
-    .map(v => String(v || '').toUpperCase());
-
-  const code = codigos.find(v => /^[A-Z]{2}$/.test(v));
-
-  if (code) {
+  for (const code of codes) {
     try {
-      const nome = new Intl.DisplayNames(
-        ['pt-BR'],
-        { type: 'region' }
+      const name = new Intl.DisplayNames(
+        ['pt-BR'], { type: 'region' }
       ).of(code);
 
-      if (nome && nome !== code) return nome;
+      if (name && name !== code) return name;
     } catch (e) {}
   }
 
   return p.ADMIN || p.name || p.name_en || p.NAME || 'País';
 }
-function style(f){let n=norm(propsName(f));let has=Object.keys(worksByCountry).some(k=>norm(k)===n || norm(aliases[n]||'')===norm(k));return {color:'#8296a8',weight:.7,fillColor:has?'#55a879':'#dce8ef',fillOpacity:has?.9:.82};}
-function getWorks(country){return Object.entries(worksByCountry).find(([k])=>norm(k)===norm(country)||norm(k)===norm(aliases[norm(country)]||''))?.[1]||[];}
-function showCountry(name){const list=getWorks(name);document.getElementById('countryTitle').textContent=name;document.getElementById('workCount').textContent=list.length?`${list.length} trabalho(s) enviado(s)`:'Nenhum trabalho registrado ainda';const el=document.getElementById('works');el.innerHTML='';if(!list.length){el.innerHTML='<div class="empty">Ainda não há trabalhos cadastrados para este país. Volte depois!</div>'; } else list.forEach(w=>{const card=document.createElement('article');card.className='work';const h=document.createElement('h3');h.textContent=w.name||'Aluno';const p=document.createElement('p');p.textContent=(w.filename||'Arquivo')+' • '+(w.date||'');card.append(h,p);if(w.mimeType&&w.mimeType.startsWith('image/')&&w.url){const img=document.createElement('img');img.className='preview';img.src = 'https://drive.google.com/thumbnail?id=' + w.url.match(/\/d\/([^/]+)/)[1] + '&sz=w1000';img.alt='Trabalho enviado por '+(w.name||'aluno');img.loading='lazy';card.append(img);}const a=document.createElement('a');a.href=w.url||'#';a.target='_blank';a.rel='noopener';a.textContent=w.mimeType==='application/pdf'?'Abrir PDF':'Abrir arquivo';card.append(a);el.append(card);});document.getElementById('modal').classList.add('open');}
+
+function hasWorksForFeature(f) {
+  const names = countryNames(f);
+
+  return Object.keys(worksByCountry).some(
+    key => names.has(norm(key))
+  );
+}
+
+function style(f) {
+  const has = hasWorksForFeature(f);
+
+  return {
+    color: '#8296a8',
+    weight: 0.7,
+    fillColor: has ? '#55a879' : '#dce8ef',
+    fillOpacity: has ? 0.9 : 0.82
+  };
+}
+
+function getWorks(country, feature) {
+  const names = feature
+    ? countryNames(feature)
+    : new Set([norm(country)]);
+
+  names.add(norm(country));
+
+  for (const key of Object.keys(worksByCountry)) {
+    if (names.has(norm(key))) {
+      return worksByCountry[key];
+    }
+  }
+
+  return [];
+}
+
+function showCountry(name, feature){const list=getWorks(name, feature);document.getElementById('countryTitle').textContent=name;document.getElementById('workCount').textContent=list.length?`${list.length} trabalho(s) enviado(s)`:'Nenhum trabalho registrado ainda';const el=document.getElementById('works');el.innerHTML='';if(!list.length){el.innerHTML='<div class="empty">Ainda não há trabalhos cadastrados para este país. Volte depois!</div>'; } else list.forEach(w=>{const card=document.createElement('article');card.className='work';const h=document.createElement('h3');h.textContent=w.name||'Aluno';const p=document.createElement('p');p.textContent=(w.filename||'Arquivo')+' • '+(w.date||'');card.append(h,p);if(w.mimeType&&w.mimeType.startsWith('image/')&&w.url){const img=document.createElement('img');img.className='preview';img.src = 'https://drive.google.com/thumbnail?id=' + w.url.match(/\/d\/([^/]+)/)[1] + '&sz=w1000';img.alt='Trabalho enviado por '+(w.name||'aluno');img.loading='lazy';card.append(img);}const a=document.createElement('a');a.href=w.url||'#';a.target='_blank';a.rel='noopener';a.textContent=w.mimeType==='application/pdf'?'Abrir PDF':'Abrir arquivo';card.append(a);el.append(card);});document.getElementById('modal').classList.add('open');}
 document.getElementById('close').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modal').classList.remove('open')});
 function setStatus(s){document.getElementById('status').textContent=s;}
 function loadWorks(){if(!API_URL.startsWith('https://script.google.com/')){setStatus('Mapa demonstrativo — falta conectar o Apps Script');return;}const cb='atlasCb'+Math.random().toString(36).slice(2);window[cb]=data=>{worksByCountry=data.works||{};if(countryLayer)countryLayer.setStyle(style);setStatus('Trabalhos carregados');delete window[cb];script.remove();};const script=document.createElement('script');script.src=API_URL+'?action=list&callback='+cb;script.onerror=()=>setStatus('Não foi possível carregar os trabalhos');document.body.append(script);}
-fetch(GEOJSON_URL).then(r=>{if(!r.ok)throw Error('mapa');return r.json()}).then(data=>{countryFeatures=data.features||[];countryLayer=L.geoJSON(data,{style, onEachFeature:(f,l)=>{const n=propsName(f);l.bindTooltip(n);l.on({mouseover:e=>e.target.setStyle({weight:1.8,color:'#244c69',fillOpacity:1}),mouseout:e=>countryLayer.resetStyle(e.target),click:()=>showCountry(n)});}}).addTo(map);setStatus('Mapa pronto • clique em um país');loadWorks();}).catch(()=>setStatus('Falha ao carregar o mapa. Verifique sua conexão.'));
+fetch(GEOJSON_URL).then(r=>{if(!r.ok)throw Error('mapa');return r.json()}).then(data=>{countryFeatures=data.features||[];countryLayer=L.geoJSON(data,{style, onEachFeature:(f,l)=>{const n=propsName(f);l.bindTooltip(n);l.on({mouseover:e=>e.target.setStyle({weight:1.8,color:'#244c69',fillOpacity:1}),mouseout:e=>countryLayer.resetStyle(e.target),click:()=>showCountry(n,f)});}}).addTo(map);setStatus('Mapa pronto • clique em um país');loadWorks();}).catch(()=>setStatus('Falha ao carregar o mapa. Verifique sua conexão.'));
 document.getElementById('search').addEventListener('input',e=>{const q=norm(e.target.value);if(!q||!countryLayer)return;const found=countryFeatures.find(f=>norm(propsName(f)).includes(q));if(found){const layer=countryLayer.getLayers().find(l=>l.feature===found);if(layer){map.fitBounds(layer.getBounds(),{maxZoom:5});layer.openTooltip();}}});
 </script></body></html>
