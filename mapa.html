@@ -1,86 +1,265 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Atlas-múndi colaborativo</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
-:root{--blue:#1769aa;--ink:#1e293b;--muted:#64748b;--paper:#f5f8fb}*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:var(--paper)}header{background:#123b5d;color:#fff;padding:20px clamp(16px,4vw,48px)}header h1{margin:0 0 6px;font-size:clamp(1.4rem,3vw,2rem)}header p{margin:0;color:#d9e8f5}.wrap{max-width:1400px;margin:auto;padding:18px}.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}.toolbar input{flex:1;min-width:210px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}.hint{color:var(--muted);font-size:.92rem}#map{height:min(68vh,720px);min-height:420px;border-radius:16px;border:1px solid #d7e1ea;box-shadow:0 5px 20px #0f172a10;background:#eaf3f8}.legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 2px;color:var(--muted);font-size:.9rem}.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;background:#2b8a5a}.modal{position:fixed;inset:0;background:#0f172ab8;display:none;align-items:center;justify-content:center;padding:18px;z-index:1000}.modal.open{display:flex}.dialog{background:white;border-radius:16px;width:min(920px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 70px #0005}.dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:start;padding:18px 20px;border-bottom:1px solid #e2e8f0}.dialog-head h2{margin:0}.close{border:0;background:#edf2f7;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer}.content{padding:18px 20px}.work{border:1px solid #dbe4ec;border-radius:12px;padding:14px;margin:12px 0}.work h3{margin:0 0 4px;font-size:1rem}.work p{margin:0 0 10px;color:var(--muted);font-size:.9rem}.preview{max-width:100%;max-height:65vh;display:block;margin:10px auto;border-radius:8px}.empty{padding:22px;border-radius:10px;background:#f1f5f9;color:#475569}.small{font-size:.85rem;color:var(--muted)}a{color:var(--blue)}footer{text-align:center;color:var(--muted);font-size:.85rem;padding:16px}
-</style></head>
+:root{--blue:#1769aa;--ink:#1e293b;--muted:#64748b;--paper:#f5f8fb}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:var(--paper)}
+header{background:#123b5d;color:#fff;padding:20px clamp(16px,4vw,48px)}
+header h1{margin:0 0 6px;font-size:clamp(1.4rem,3vw,2rem)}
+header p{margin:0;color:#d9e8f5}
+.wrap{max-width:1400px;margin:auto;padding:18px}
+.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.toolbar input{flex:1;min-width:210px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}
+.hint{color:var(--muted);font-size:.92rem}
+#map{height:min(68vh,720px);min-height:420px;border-radius:16px;border:1px solid #d7e1ea;box-shadow:0 5px 20px #0f172a10;background:#eaf3f8}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 2px;color:var(--muted);font-size:.9rem}
+.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;background:#2b8a5a}
+.modal{position:fixed;inset:0;background:#0f172ab8;display:none;align-items:center;justify-content:center;padding:18px;z-index:1000}
+.modal.open{display:flex}
+.dialog{background:white;border-radius:16px;width:min(920px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 70px #0005}
+.dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:start;padding:18px 20px;border-bottom:1px solid #e2e8f0}
+.dialog-head h2{margin:0}
+.close{border:0;background:#edf2f7;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer}
+.content{padding:18px 20px}
+.work{border:1px solid #dbe4ec;border-radius:12px;padding:14px;margin:12px 0}
+.work h3{margin:0 0 4px;font-size:1rem}
+.work p{margin:0 0 10px;color:var(--muted);font-size:.9rem}
+.preview{max-width:100%;max-height:65vh;display:block;margin:10px auto;border-radius:8px}
+.empty{padding:22px;border-radius:10px;background:#f1f5f9;color:#475569}
+.small{font-size:.85rem;color:var(--muted)}
+a{color:var(--blue)}
+footer{text-align:center;color:var(--muted);font-size:.85rem;padding:16px}
+</style>
+</head>
 <body>
-<header><h1>Atlas-múndi colaborativo</h1><p>Clique em um país para consultar os trabalhos enviados pela turma.</p></header>
-<main class="wrap"><div class="toolbar"><input id="search" type="search" placeholder="Buscar país…" aria-label="Buscar país"><span class="hint" id="status">Carregando mapa…</span></div><div id="map" role="application" aria-label="Mapa-múndi interativo"></div><div class="legend"><span><i class="dot"></i> País com trabalho enviado</span><span>Selecione um país para abrir os documentos.</span></div><p class="hint">Os trabalhos aparecerão aqui depois que o formulário e o armazenamento online forem configurados.</p></main>
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="countryTitle"><section class="dialog"><div class="dialog-head"><div><h2 id="countryTitle">País</h2><div class="small" id="workCount"></div></div><button class="close" id="close" aria-label="Fechar">×</button></div><div class="content" id="works"></div></section></div>
+<header>
+  <h1>Atlas-múndi colaborativo</h1>
+  <p>Clique em um país para consultar os trabalhos enviados pela turma.</p>
+</header>
+
+<main class="wrap">
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="Buscar país…" aria-label="Buscar país">
+    <span class="hint" id="status">Carregando mapa…</span>
+  </div>
+  <div id="map" role="application" aria-label="Mapa-múndi interativo"></div>
+  <div class="legend">
+    <span><i class="dot"></i> País com trabalho enviado</span>
+    <span>Selecione um país para abrir os documentos.</span>
+  </div>
+  <p class="hint">Os trabalhos aparecem depois de serem registrados pelo formulário.</p>
+</main>
+
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="countryTitle">
+  <section class="dialog">
+    <div class="dialog-head">
+      <div>
+        <h2 id="countryTitle">País</h2>
+        <div class="small" id="workCount"></div>
+      </div>
+      <button class="close" id="close" aria-label="Fechar">×</button>
+    </div>
+    <div class="content" id="works"></div>
+  </section>
+</div>
+
 <footer>Atlas-múndi colaborativo • atividade escolar</footer>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// CONFIGURAÇÃO: cole abaixo a URL do serviço publicado no Google Apps Script.
-const API_URL = 'https://script.google.com/macros/s/AKfycbyAuN6_lSoKzbKrX2NKowJyd-Lw4S-kboVpuUrDPbJ4ccylgACUIszqMrFmTnYwNaN8/exec';const GEOJSON_URL='https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
-const map=L.map('map',{worldCopyJump:true,minZoom:1}).setView([18,0],2);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{attribution:'&copy; OpenStreetMap &copy; CARTO',maxZoom:8}).addTo(map);
-let countryLayer, countryFeatures=[], worksByCountry={};
-const norm=s=>(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
-const aliases={usa:'Estados Unidos',unitedstates:'Estados Unidos',unitedstatesofamerica:'Estados Unidos',russia:'Rússia',southafrica:'África do Sul',southkorea:'Coreia do Sul',northkorea:'Coreia do Norte',ivorycoast:'Costa do Marfim',czechia:'Chéquia',democraticrepublicofthecongo:'República Democrática do Congo',congo:'República do Congo',iran:'Irã',syria:'Síria',turkiye:'Turquia',vietnam:'Vietnã',laos:'Laos',bolivia:'Bolívia',venezuela:'Venezuela',tanzania:'Tanzânia',moldova:'Moldávia',brunei:'Brunei',taiwan:'Taiwan',brazil:'Brasil',germany:'Alemanha'};
+const API_URL = 'https://script.google.com/macros/s/AKfycbyAuN6_lSoKzbKrX2NKowJyd-Lw4S-kboVpuUrDPbJ4ccylgACUIszqMrFmTnYwNaN8/exec';
+const GEOJSON_URL = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
 
+const map = L.map('map', {worldCopyJump:true, minZoom:1}).setView([18,0],2);
 
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+  attribution:'&copy; OpenStreetMap &copy; CARTO',
+  maxZoom:8
+}).addTo(map);
+
+let countryLayer;
+let countryFeatures = [];
+let worksByCountry = {};
+
+/* Normaliza acentos, espaços e pontuação para comparar nomes. */
+const norm = s => (s || '')
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g,'')
+  .toLowerCase()
+  .replace(/[^a-z0-9]/g,'');
+
+/*
+  Correspondência por código ISO 3166-1 alpha-3.
+  Os nomes correspondem aos utilizados no formulário em português.
+*/
+const ptByIso3 = {
+  AFG:'Afeganistão', ZAF:'África do Sul', ALB:'Albânia',
+  DEU:'Alemanha', AND:'Andorra', AGO:'Angola',
+  ATG:'Antígua e Barbuda', SAU:'Arábia Saudita', DZA:'Argélia',
+  ARG:'Argentina', ARM:'Armênia', AUS:'Austrália', AUT:'Áustria',
+  AZE:'Azerbaijão', BHS:'Bahamas', BHR:'Bahrein',
+  BGD:'Bangladesh', BRB:'Barbados', BEL:'Bélgica', BLZ:'Belize',
+  BEN:'Benim', BLR:'Bielorrússia', BOL:'Bolívia',
+  BIH:'Bósnia e Herzegovina', BWA:'Botsuana', BRA:'Brasil',
+  BRN:'Brunei', BGR:'Bulgária', BFA:'Burkina Faso',
+  BDI:'Burundi', BTN:'Butão', CPV:'Cabo Verde',
+  CMR:'Camarões', KHM:'Camboja', CAN:'Canadá', QAT:'Catar',
+  KAZ:'Cazaquistão', TCD:'Chade', CHL:'Chile', CHN:'China',
+  CYP:'Chipre', COL:'Colômbia', COM:'Comores', COG:'Congo',
+  PRK:'Coreia do Norte', KOR:'Coreia do Sul',
+  CIV:'Costa do Marfim', CRI:'Costa Rica', HRV:'Croácia',
+  CUB:'Cuba', DNK:'Dinamarca', DJI:'Djibuti', DMA:'Dominica',
+  EGY:'Egito', SLV:'El Salvador', ARE:'Emirados Árabes Unidos',
+  ECU:'Equador', ERI:'Eritreia', SVK:'Eslováquia',
+  SVN:'Eslovênia', ESP:'Espanha', USA:'Estados Unidos',
+  EST:'Estônia', SWZ:'Eswatini', ETH:'Etiópia', FJI:'Fiji',
+  PHL:'Filipinas', FIN:'Finlândia', FRA:'França', GAB:'Gabão',
+  GMB:'Gâmbia', GHA:'Gana', GEO:'Geórgia', GRD:'Granada',
+  GRC:'Grécia', GTM:'Guatemala', GUY:'Guiana', GIN:'Guiné',
+  GNB:'Guiné-Bissau', GNQ:'Guiné Equatorial', HTI:'Haiti',
+  HND:'Honduras', HUN:'Hungria', YEM:'Iêmen',
+  MHL:'Ilhas Marshall', SLB:'Ilhas Salomão', IND:'Índia',
+  IDN:'Indonésia', IRN:'Irã', IRQ:'Iraque', IRL:'Irlanda',
+  ISL:'Islândia', ISR:'Israel', ITA:'Itália', JAM:'Jamaica',
+  JPN:'Japão', JOR:'Jordânia', KIR:'Kiribati', KWT:'Kuwait',
+  LAO:'Laos', LSO:'Lesoto', LVA:'Letônia', LBN:'Líbano',
+  LBR:'Libéria', LBY:'Líbia', LIE:'Liechtenstein',
+  LTU:'Lituânia', LUX:'Luxemburgo', MKD:'Macedônia do Norte',
+  MDG:'Madagascar', MYS:'Malásia', MWI:'Malaui', MDV:'Maldivas',
+  MLI:'Mali', MLT:'Malta', MAR:'Marrocos', MUS:'Maurício',
+  MRT:'Mauritânia', MEX:'México', FSM:'Micronésia',
+  MOZ:'Moçambique', MDA:'Moldávia', MCO:'Mônaco',
+  MNG:'Mongólia', MNE:'Montenegro', MMR:'Myanmar',
+  NAM:'Namíbia', NRU:'Nauru', NPL:'Nepal', NIC:'Nicarágua',
+  NER:'Níger', NGA:'Nigéria', NOR:'Noruega',
+  NZL:'Nova Zelândia', OMN:'Omã', NLD:'Países Baixos',
+  PLW:'Palau', PSE:'Palestina', PAN:'Panamá',
+  PNG:'Papua-Nova Guiné', PAK:'Paquistão', PRY:'Paraguai',
+  PER:'Peru', POL:'Polônia', PRT:'Portugal', KEN:'Quênia',
+  KGZ:'Quirguistão', GBR:'Reino Unido',
+  CAF:'República Centro-Africana',
+  COD:'República Democrática do Congo',
+  DOM:'República Dominicana', CZE:'República Tcheca',
+  ROU:'Romênia', RWA:'Ruanda', RUS:'Rússia', WSM:'Samoa',
+  SMR:'San Marino', LCA:'Santa Lúcia',
+  KNA:'São Cristóvão e Névis', STP:'São Tomé e Príncipe',
+  VCT:'São Vicente e Granadinas', SEN:'Senegal',
+  SLE:'Serra Leoa', SRB:'Sérvia', SYC:'Seicheles',
+  SGP:'Singapura', SYR:'Síria', SOM:'Somália',
+  LKA:'Sri Lanka', SDN:'Sudão', SSD:'Sudão do Sul',
+  SWE:'Suécia', CHE:'Suíça', SUR:'Suriname', THA:'Tailândia',
+  TJK:'Tajiquistão', TZA:'Tanzânia', TLS:'Timor-Leste',
+  TGO:'Togo', TON:'Tonga', TTO:'Trinidad e Tobago',
+  TUN:'Tunísia', TKM:'Turcomenistão', TUR:'Turquia',
+  TUV:'Tuvalu', UKR:'Ucrânia', UGA:'Uganda', URY:'Uruguai',
+  UZB:'Uzbequistão', VUT:'Vanuatu', VAT:'Vaticano',
+  VEN:'Venezuela', VNM:'Vietnã', ZMB:'Zâmbia', ZWE:'Zimbábue',
+  JPN:'Japão', ECU:'Equador', KHM:'Camboja',
+  TWN:'Taiwan', XKX:'Kosovo'
+};
+
+/* Variações conhecidas de nomes em inglês e nomes alternativos. */
+const aliases = {
+  unitedstates:'Estados Unidos',
+  unitedstatesofamerica:'Estados Unidos',
+  usa:'Estados Unidos',
+  russia:'Rússia',
+  russianfederation:'Rússia',
+  southafrica:'África do Sul',
+  southkorea:'Coreia do Sul',
+  northkorea:'Coreia do Norte',
+  ivorycoast:'Costa do Marfim',
+  czechia:'República Tcheca',
+  czechrepublic:'República Tcheca',
+  democraticrepublicofthecongo:'República Democrática do Congo',
+  drcongo:'República Democrática do Congo',
+  congo:'República do Congo',
+  republicofthecongo:'República do Congo',
+  iran:'Irã',
+  syria:'Síria',
+  turkiye:'Turquia',
+  turkey:'Turquia',
+  vietnam:'Vietnã',
+  laos:'Laos',
+  bolivia:'Bolívia',
+  venezuela:'Venezuela',
+  tanzania:'Tanzânia',
+  moldova:'Moldávia',
+  brunei:'Brunei',
+  brazil:'Brasil',
+  germany:'Alemanha',
+  netherlands:'Países Baixos',
+  theNetherlands:'Países Baixos',
+  holland:'Países Baixos',
+  chad:'Chade',
+  mauritania:'Mauritânia',
+  swaziland:'Eswatini',
+  easttimor:'Timor-Leste',
+  palestine:'Palestina',
+  palestinestate:'Palestina',
+  northmacedonia:'Macedônia do Norte',
+  cotedivoire:'Costa do Marfim',
+  capeverde:'Cabo Verde',
+  republicofserbia:'Sérvia',
+  unitedkingdom:'Reino Unido',
+  england:'Reino Unido'
+};
+
+function addName(set, value) {
+  if (!value) return;
+  const n = norm(String(value));
+  if (!n) return;
+  set.add(n);
+
+  if (aliases[n]) set.add(norm(aliases[n]));
+
+  for (const [alias, target] of Object.entries(aliases)) {
+    if (norm(target) === n) set.add(norm(alias));
+  }
+}
+
+/* Lê os nomes possíveis de cada região do GeoJSON. */
 function countryNames(f) {
   const p = f && f.properties ? f.properties : {};
   const names = new Set();
 
-  const addName = value => {
-    if (!value) return;
-    const n = norm(String(value));
-    if (!n) return;
-
-    names.add(n);
-
-    if (aliases[n]) names.add(norm(aliases[n]));
-
-    for (const [alias, target] of Object.entries(aliases)) {
-      if (norm(target) === n) names.add(norm(alias));
-    }
-  };
-
   [
-    p.ADMIN, p.name, p.name_en, p.NAME,
-    p.NAME_EN, p.name_long, p.FORMAL_EN
-  ].forEach(addName);
+    p.ADMIN, p.name, p.name_en, p.NAME, p.NAME_EN,
+    p.name_long, p.FORMAL_EN, p.BRK_NAME,
+    p.SOVEREIGNT, p.GEOUNIT
+  ].forEach(v => addName(names, v));
 
-  const codes = [p.ISO_A2_EH, p.ISO_A2]
-    .map(v => String(v || '').toUpperCase())
-    .filter(v => /^[A-Z]{2}$/.test(v));
+  const codes = [
+    p.ISO_A3_EH, p.ISO_A3, p.ADM0_A3, p.SOV_A3
+  ].map(v => String(v || '').toUpperCase());
 
   for (const code of codes) {
-    for (const locale of ['pt-BR', 'en']) {
-      try {
-        const displayName = new Intl.DisplayNames(
-          [locale], { type: 'region' }
-        ).of(code);
-
-        if (displayName && displayName !== code) {
-          addName(displayName);
-        }
-      } catch (e) {}
-    }
+    if (ptByIso3[code]) addName(names, ptByIso3[code]);
   }
 
   return names;
 }
 
+/* Determina um nome em português para o título da janela. */
 function propsName(f) {
   const p = f.properties || {};
-  const codes = [p.ISO_A2_EH, p.ISO_A2]
-    .map(v => String(v || '').toUpperCase())
-    .filter(v => /^[A-Z]{2}$/.test(v));
+  const codes = [
+    p.ISO_A3_EH, p.ISO_A3, p.ADM0_A3, p.SOV_A3
+  ].map(v => String(v || '').toUpperCase());
 
   for (const code of codes) {
-    try {
-      const name = new Intl.DisplayNames(
-        ['pt-BR'], { type: 'region' }
-      ).of(code);
+    if (ptByIso3[code]) return ptByIso3[code];
+  }
 
-      if (name && name !== code) return name;
-    } catch (e) {}
+  const names = countryNames(f);
+  for (const key of Object.keys(worksByCountry)) {
+    if (names.has(norm(key))) return key;
   }
 
   return p.ADMIN || p.name || p.name_en || p.NAME || 'País';
@@ -89,8 +268,9 @@ function propsName(f) {
 function hasWorksForFeature(f) {
   const names = countryNames(f);
 
-  return Object.keys(worksByCountry).some(
-    key => names.has(norm(key))
+  return Object.keys(worksByCountry).some(key =>
+    names.has(norm(key)) ||
+    (aliases[norm(key)] && names.has(norm(aliases[norm(key)])))
   );
 }
 
@@ -98,22 +278,26 @@ function style(f) {
   const has = hasWorksForFeature(f);
 
   return {
-    color: '#8296a8',
-    weight: 0.7,
-    fillColor: has ? '#55a879' : '#dce8ef',
-    fillOpacity: has ? 0.9 : 0.82
+    color:'#8296a8',
+    weight:0.7,
+    fillColor:has ? '#55a879' : '#dce8ef',
+    fillOpacity:has ? 0.9 : 0.82
   };
 }
 
 function getWorks(country, feature) {
   const names = feature
     ? countryNames(feature)
-    : new Set([norm(country)]);
+    : new Set();
 
-  names.add(norm(country));
+  addName(names, country);
 
   for (const key of Object.keys(worksByCountry)) {
-    if (names.has(norm(key))) {
+    if (
+      names.has(norm(key)) ||
+      norm(aliases[norm(key)] || '') === norm(country) ||
+      norm(aliases[norm(country)] || '') === norm(key)
+    ) {
       return worksByCountry[key];
     }
   }
@@ -121,10 +305,157 @@ function getWorks(country, feature) {
   return [];
 }
 
-function showCountry(name, feature){const list=getWorks(name, feature);document.getElementById('countryTitle').textContent=name;document.getElementById('workCount').textContent=list.length?`${list.length} trabalho(s) enviado(s)`:'Nenhum trabalho registrado ainda';const el=document.getElementById('works');el.innerHTML='';if(!list.length){el.innerHTML='<div class="empty">Ainda não há trabalhos cadastrados para este país. Volte depois!</div>'; } else list.forEach(w=>{const card=document.createElement('article');card.className='work';const h=document.createElement('h3');h.textContent=w.name||'Aluno';const p=document.createElement('p');p.textContent=(w.filename||'Arquivo')+' • '+(w.date||'');card.append(h,p);if(w.mimeType&&w.mimeType.startsWith('image/')&&w.url){const img=document.createElement('img');img.className='preview';img.src = 'https://drive.google.com/thumbnail?id=' + w.url.match(/\/d\/([^/]+)/)[1] + '&sz=w1000';img.alt='Trabalho enviado por '+(w.name||'aluno');img.loading='lazy';card.append(img);}const a=document.createElement('a');a.href=w.url||'#';a.target='_blank';a.rel='noopener';a.textContent=w.mimeType==='application/pdf'?'Abrir PDF':'Abrir arquivo';card.append(a);el.append(card);});document.getElementById('modal').classList.add('open');}
-document.getElementById('close').onclick=()=>document.getElementById('modal').classList.remove('open');document.getElementById('modal').onclick=e=>{if(e.target.id==='modal')e.currentTarget.classList.remove('open')};document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('modal').classList.remove('open')});
-function setStatus(s){document.getElementById('status').textContent=s;}
-function loadWorks(){if(!API_URL.startsWith('https://script.google.com/')){setStatus('Mapa demonstrativo — falta conectar o Apps Script');return;}const cb='atlasCb'+Math.random().toString(36).slice(2);window[cb]=data=>{worksByCountry=data.works||{};if(countryLayer)countryLayer.setStyle(style);setStatus('Trabalhos carregados');delete window[cb];script.remove();};const script=document.createElement('script');script.src=API_URL+'?action=list&callback='+cb;script.onerror=()=>setStatus('Não foi possível carregar os trabalhos');document.body.append(script);}
-fetch(GEOJSON_URL).then(r=>{if(!r.ok)throw Error('mapa');return r.json()}).then(data=>{countryFeatures=data.features||[];countryLayer=L.geoJSON(data,{style, onEachFeature:(f,l)=>{const n=propsName(f);l.bindTooltip(n);l.on({mouseover:e=>e.target.setStyle({weight:1.8,color:'#244c69',fillOpacity:1}),mouseout:e=>countryLayer.resetStyle(e.target),click:()=>showCountry(n,f)});}}).addTo(map);setStatus('Mapa pronto • clique em um país');loadWorks();}).catch(()=>setStatus('Falha ao carregar o mapa. Verifique sua conexão.'));
-document.getElementById('search').addEventListener('input',e=>{const q=norm(e.target.value);if(!q||!countryLayer)return;const found=countryFeatures.find(f=>norm(propsName(f)).includes(q));if(found){const layer=countryLayer.getLayers().find(l=>l.feature===found);if(layer){map.fitBounds(layer.getBounds(),{maxZoom:5});layer.openTooltip();}}});
-</script></body></html>
+function showCountry(name, feature) {
+  const list = getWorks(name, feature);
+  document.getElementById('countryTitle').textContent = name;
+
+  document.getElementById('workCount').textContent = list.length
+    ? `${list.length} trabalho(s) enviado(s)`
+    : 'Nenhum trabalho registrado ainda';
+
+  const el = document.getElementById('works');
+  el.innerHTML = '';
+
+  if (!list.length) {
+    el.innerHTML = '<div class="empty">Ainda não há trabalhos cadastrados ainda para este país. Volte depois!</div>';
+  } else {
+    list.forEach(w => {
+      const card = document.createElement('article');
+      card.className = 'work';
+
+      const h = document.createElement('h3');
+      h.textContent = w.name || 'Aluno';
+
+      const p = document.createElement('p');
+      p.textContent = (w.filename || 'Arquivo') + ' • ' + (w.date || '');
+
+      card.append(h, p);
+
+      if (w.mimeType && w.mimeType.startsWith('image/') && w.url) {
+        const img = document.createElement('img');
+        img.className = 'preview';
+
+        const match = w.url.match(/\/d\/([a-zA-Z0-9_-]+)/)
+          || w.url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+
+        if (match) {
+          img.src = 'https://drive.google.com/thumbnail?id='
+            + match[1] + '&sz=w1000';
+        } else {
+          img.src = w.url;
+        }
+
+        img.alt = 'Trabalho enviado por ' + (w.name || 'aluno');
+        img.loading = 'lazy';
+        card.append(img);
+      }
+
+      const a = document.createElement('a');
+      a.href = w.url || '#';
+      a.target = '_blank';
+      a.rel = 'noopener';
+      a.textContent = w.mimeType === 'application/pdf'
+        ? 'Abrir PDF'
+        : 'Abrir arquivo';
+
+      card.append(a);
+      el.append(card);
+    });
+  }
+
+  document.getElementById('modal').classList.add('open');
+}
+
+document.getElementById('close').onclick = () =>
+  document.getElementById('modal').classList.remove('open');
+
+document.getElementById('modal').onclick = e => {
+  if (e.target.id === 'modal') e.currentTarget.classList.remove('open');
+};
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.getElementById('modal').classList.remove('open');
+  }
+});
+
+function setStatus(s) {
+  document.getElementById('status').textContent = s;
+}
+
+function loadWorks() {
+  if (!API_URL.startsWith('https://script.google.com/')) {
+    setStatus('Mapa demonstrativo — falta conectar o Apps Script');
+    return;
+  }
+
+  const cb = 'atlasCb' + Math.random().toString(36).slice(2);
+
+  window[cb] = data => {
+    worksByCountry = data.works || {};
+
+    if (countryLayer) countryLayer.setStyle(style);
+
+    setStatus('Trabalhos carregados');
+    delete window[cb];
+    script.remove();
+  };
+
+  const script = document.createElement('script');
+  script.src = API_URL + '?action=list&callback=' + cb;
+  script.onerror = () => setStatus('Não foi possível carregar os trabalhos');
+  document.body.append(script);
+}
+
+fetch(GEOJSON_URL)
+  .then(r => {
+    if (!r.ok) throw Error('mapa');
+    return r.json();
+  })
+  .then(data => {
+    countryFeatures = data.features || [];
+
+    countryLayer = L.geoJSON(data, {
+      style,
+      onEachFeature: (f, l) => {
+        const n = propsName(f);
+        l.bindTooltip(n);
+
+        l.on({
+          mouseover: e => e.target.setStyle({
+            weight:1.8,
+            color:'#244c69',
+            fillOpacity:1
+          }),
+          mouseout: e => countryLayer.resetStyle(e.target),
+          click: () => showCountry(n, f)
+        });
+      }
+    }).addTo(map);
+
+    setStatus('Mapa pronto • clique em um país');
+    loadWorks();
+  })
+  .catch(() => setStatus('Falha ao carregar o mapa. Verifique sua conexão.'));
+
+document.getElementById('search').addEventListener('input', e => {
+  const q = norm(e.target.value);
+  if (!q || !countryLayer) return;
+
+  const found = countryFeatures.find(f => {
+    const names = countryNames(f);
+    return [...names].some(n => n.includes(q));
+  });
+
+  if (found) {
+    const layer = countryLayer.getLayers().find(l => l.feature === found);
+
+    if (layer) {
+      map.fitBounds(layer.getBounds(), {maxZoom:5});
+      layer.openTooltip();
+    }
+  }
+});
+</script>
+</body>
+</html>
