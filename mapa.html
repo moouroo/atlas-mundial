@@ -1,461 +1,536 @@
 
-<!doctype html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Atlas-múndi colaborativo</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atlas Mundial — Trabalhos dos Alunos</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3"></script>
+
 <style>
-:root{--blue:#1769aa;--ink:#1e293b;--muted:#64748b;--paper:#f5f8fb}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,sans-serif;color:var(--ink);background:var(--paper)}
-header{background:#123b5d;color:#fff;padding:20px clamp(16px,4vw,48px)}
-header h1{margin:0 0 6px;font-size:clamp(1.4rem,3vw,2rem)}
-header p{margin:0;color:#d9e8f5}
-.wrap{max-width:1400px;margin:auto;padding:18px}
-.toolbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.toolbar input{flex:1;min-width:210px;padding:11px 13px;border:1px solid #cbd5e1;border-radius:10px;font:inherit}
-.hint{color:var(--muted);font-size:.92rem}
-#map{height:min(68vh,720px);min-height:420px;border-radius:16px;border:1px solid #d7e1ea;box-shadow:0 5px 20px #0f172a10;background:#eaf3f8}
-.legend{display:flex;gap:16px;flex-wrap:wrap;margin:12px 2px;color:var(--muted);font-size:.9rem}
-.dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;background:#2b8a5a}
-.modal{position:fixed;inset:0;background:#0f172ab8;display:none;align-items:center;justify-content:center;padding:18px;z-index:1000}
-.modal.open{display:flex}
-.dialog{background:white;border-radius:16px;width:min(920px,100%);max-height:92vh;overflow:auto;box-shadow:0 20px 70px #0005}
-.dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:start;padding:18px 20px;border-bottom:1px solid #e2e8f0}
-.dialog-head h2{margin:0}
-.close{border:0;background:#edf2f7;border-radius:8px;padding:8px 12px;font-size:1.2rem;cursor:pointer}
-.content{padding:18px 20px}
-.work{border:1px solid #dbe4ec;border-radius:12px;padding:14px;margin:12px 0}
-.work h3{margin:0 0 4px;font-size:1rem}
-.work p{margin:0 0 10px;color:var(--muted);font-size:.9rem}
-.preview{max-width:100%;max-height:65vh;display:block;margin:10px auto;border-radius:8px}
-.empty{padding:22px;border-radius:10px;background:#f1f5f9;color:#475569}
-.small{font-size:.85rem;color:var(--muted)}
-a{color:var(--blue)}
-footer{text-align:center;color:var(--muted);font-size:.85rem;padding:16px}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#263238}
+header{background:#0b4f71;color:white;padding:18px 24px;box-shadow:0 2px 8px #0002}
+header h1{margin:0 0 6px;font-size:25px}
+header p{margin:0;font-size:14px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;min-height:calc(100vh - 80px)}
+#map-area{position:relative;background:#dcecf3;overflow:hidden;min-height:620px}
+#map{width:100%;height:100%;min-height:620px;display:block}
+.country{fill:#c9d4d9;stroke:white;stroke-width:.6px;cursor:pointer;transition:fill .15s}
+.country:hover{fill:#80b5c9}
+.country.selected{fill:#f1a340;stroke:#8a4f00;stroke-width:1.5px}
+.ocean{fill:#dcecf3}
+.controls{position:absolute;left:18px;top:18px;display:flex;flex-direction:column;gap:6px}
+.controls button{width:38px;height:38px;border:0;border-radius:5px;background:white;color:#263238;font-size:22px;cursor:pointer;box-shadow:0 2px 7px #0002}
+.controls button:hover{background:#eef3f5}
+.hint{position:absolute;left:18px;bottom:18px;background:#fffffff0;padding:9px 12px;border-radius:6px;font-size:13px;box-shadow:0 2px 7px #0002}
+#panel{background:white;border-left:1px solid #d7dfe3;padding:22px;overflow-y:auto;min-width:0}
+.search{margin-bottom:16px}
+.search input{width:100%;padding:11px 12px;border:1px solid #c9d2d6;border-radius:6px;font-size:15px}
+.search input:focus{outline:2px solid #b4d7e6}
+.country-title{display:flex;align-items:center;gap:12px;border-bottom:1px solid #e1e5e7;padding-bottom:15px;margin-bottom:16px}
+.flag{font-size:42px}
+.country-title h2{margin:0;font-size:24px;color:#0b4f71}
+.country-title small{display:block;color:#68777f;margin-top:5px}
+.section{margin:18px 0}
+.section h3{font-size:14px;text-transform:uppercase;letter-spacing:.5px;color:#0b4f71;margin:0 0 10px}
+.empty{color:#68777f;line-height:1.5;text-align:center;padding:35px 12px}
+.work-card{border:1px solid #dce3e6;border-radius:8px;padding:12px;margin:10px 0;background:#fff}
+.work-card h4{margin:0 0 7px;font-size:15px;overflow-wrap:anywhere}
+.work-card p{font-size:13px;color:#53636a;margin:5px 0;overflow-wrap:anywhere}
+.work-card a{display:inline-block;margin-top:9px;color:#0b5d87;font-weight:bold;text-decoration:none}
+.work-card a:hover{text-decoration:underline}
+.preview{display:block;width:100%;max-height:230px;object-fit:contain;margin-top:10px;border-radius:5px;background:#f1f5f7}
+.status{font-size:13px;color:#596b73;line-height:1.5}
+.status.error{color:#a12622}
+.badge{display:inline-block;background:#e8f2f6;color:#174a63;border-radius:20px;padding:4px 9px;font-size:12px;margin-bottom:8px}
+footer{font-size:11px;color:#7a878d;border-top:1px solid #e1e5e7;padding-top:12px;margin-top:20px;line-height:1.5}
+@media(max-width:850px){
+ .layout{grid-template-columns:1fr}
+ #map-area,#map{min-height:470px}
+ #panel{min-height:350px;border-left:0;border-top:1px solid #d7dfe3}
+}
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Atlas-múndi colaborativo</h1>
-  <p>Clique em um país para consultar os trabalhos enviados pela turma.</p>
+  <h1>Atlas Mundial</h1>
+  <p>Selecione um país para consultar os trabalhos enviados pelos alunos.</p>
 </header>
 
-<main class="wrap">
-  <div class="toolbar">
-    <input id="search" type="search" placeholder="Buscar país…" aria-label="Buscar país">
-    <span class="hint" id="status">Carregando mapa…</span>
-  </div>
-  <div id="map" role="application" aria-label="Mapa-múndi interativo"></div>
-  <div class="legend">
-    <span><i class="dot"></i> País com trabalho enviado</span>
-    <span>Selecione um país para abrir os documentos.</span>
-  </div>
-  <p class="hint">Os trabalhos aparecem depois de serem registrados pelo formulário.</p>
-</main>
-
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="countryTitle">
-  <section class="dialog">
-    <div class="dialog-head">
-      <div>
-        <h2 id="countryTitle">País</h2>
-        <div class="small" id="workCount"></div>
-      </div>
-      <button class="close" id="close" aria-label="Fechar">×</button>
+<div class="layout">
+  <section id="map-area">
+    <svg id="map" aria-label="Mapa-múndi interativo"></svg>
+    <div class="controls">
+      <button id="zoom-in" title="Aumentar">+</button>
+      <button id="zoom-out" title="Diminuir">−</button>
+      <button id="reset" title="Recentrar">⌂</button>
     </div>
-    <div class="content" id="works"></div>
+    <div class="hint">Clique em um país • Use + e − para aproximar</div>
   </section>
+
+  <aside id="panel">
+    <div class="search">
+      <input id="search" type="search" placeholder="Pesquisar país em português...">
+    </div>
+    <div id="panel-content">
+      <div class="empty">
+        <h2>Atlas Mundial</h2>
+        <p>Selecione um país no mapa ou pesquise seu nome para consultar os trabalhos cadastrados.</p>
+        <p id="load-status" class="status">Carregando mapa e trabalhos...</p>
+      </div>
+    </div>
+  </aside>
 </div>
 
-<footer>Atlas-múndi colaborativo • atividade escolar</footer>
-
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbyAuN6_lSoKzbKrX2NKowJyd-Lw4S-kboVpuUrDPbJ4ccylgACUIszqMrFmTnYwNaN8/exec';
-const GEOJSON_URL = 'https://raw.githubusercontent.com/datasets/geo-countries/master/data/countries.geojson';
+"use strict";
 
-const map = L.map('map', {worldCopyJump:true, minZoom:1}).setView([18,0],2);
+// CONEXÃO COM O FORMULÁRIO JÁ EXISTENTE
+const API_URL =
+"https://script.google.com/macros/s/AKfycbyAuN6_lSoKzbKrX2NKowJyd-Lw4S-kboVpuUrDPbJ4ccylgACUIszqMrFmTnYwNaN8/exec";
 
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
-  attribution:'&copy; OpenStreetMap &copy; CARTO',
-  maxZoom:8
-}).addTo(map);
-
-let countryLayer;
-let countryFeatures = [];
-let worksByCountry = {};
-
-/* Normaliza acentos, espaços e pontuação para comparar nomes. */
-const norm = s => (s || '')
-  .normalize('NFD')
-  .replace(/[\u0300-\u036f]/g,'')
-  .toLowerCase()
-  .replace(/[^a-z0-9]/g,'');
-
-/*
-  Correspondência por código ISO 3166-1 alpha-3.
-  Os nomes correspondem aos utilizados no formulário em português.
-*/
-const ptByIso3 = {
-  AFG:'Afeganistão', ZAF:'África do Sul', ALB:'Albânia',
-  DEU:'Alemanha', AND:'Andorra', AGO:'Angola',
-  ATG:'Antígua e Barbuda', SAU:'Arábia Saudita', DZA:'Argélia',
-  ARG:'Argentina', ARM:'Armênia', AUS:'Austrália', AUT:'Áustria',
-  AZE:'Azerbaijão', BHS:'Bahamas', BHR:'Bahrein',
-  BGD:'Bangladesh', BRB:'Barbados', BEL:'Bélgica', BLZ:'Belize',
-  BEN:'Benim', BLR:'Bielorrússia', BOL:'Bolívia',
-  BIH:'Bósnia e Herzegovina', BWA:'Botsuana', BRA:'Brasil',
-  BRN:'Brunei', BGR:'Bulgária', BFA:'Burkina Faso',
-  BDI:'Burundi', BTN:'Butão', CPV:'Cabo Verde',
-  CMR:'Camarões', KHM:'Camboja', CAN:'Canadá', QAT:'Catar',
-  KAZ:'Cazaquistão', TCD:'Chade', CHL:'Chile', CHN:'China',
-  CYP:'Chipre', COL:'Colômbia', COM:'Comores', COG:'Congo',
-  PRK:'Coreia do Norte', KOR:'Coreia do Sul',
-  CIV:'Costa do Marfim', CRI:'Costa Rica', HRV:'Croácia',
-  CUB:'Cuba', DNK:'Dinamarca', DJI:'Djibuti', DMA:'Dominica',
-  EGY:'Egito', SLV:'El Salvador', ARE:'Emirados Árabes Unidos',
-  ECU:'Equador', ERI:'Eritreia', SVK:'Eslováquia',
-  SVN:'Eslovênia', ESP:'Espanha', USA:'Estados Unidos',
-  EST:'Estônia', SWZ:'Eswatini', ETH:'Etiópia', FJI:'Fiji',
-  PHL:'Filipinas', FIN:'Finlândia', FRA:'França', GAB:'Gabão',
-  GMB:'Gâmbia', GHA:'Gana', GEO:'Geórgia', GRD:'Granada',
-  GRC:'Grécia', GTM:'Guatemala', GUY:'Guiana', GIN:'Guiné',
-  GNB:'Guiné-Bissau', GNQ:'Guiné Equatorial', HTI:'Haiti',
-  HND:'Honduras', HUN:'Hungria', YEM:'Iêmen',
-  MHL:'Ilhas Marshall', SLB:'Ilhas Salomão', IND:'Índia',
-  IDN:'Indonésia', IRN:'Irã', IRQ:'Iraque', IRL:'Irlanda',
-  ISL:'Islândia', ISR:'Israel', ITA:'Itália', JAM:'Jamaica',
-  JPN:'Japão', JOR:'Jordânia', KIR:'Kiribati', KWT:'Kuwait',
-  LAO:'Laos', LSO:'Lesoto', LVA:'Letônia', LBN:'Líbano',
-  LBR:'Libéria', LBY:'Líbia', LIE:'Liechtenstein',
-  LTU:'Lituânia', LUX:'Luxemburgo', MKD:'Macedônia do Norte',
-  MDG:'Madagascar', MYS:'Malásia', MWI:'Malaui', MDV:'Maldivas',
-  MLI:'Mali', MLT:'Malta', MAR:'Marrocos', MUS:'Maurício',
-  MRT:'Mauritânia', MEX:'México', FSM:'Micronésia',
-  MOZ:'Moçambique', MDA:'Moldávia', MCO:'Mônaco',
-  MNG:'Mongólia', MNE:'Montenegro', MMR:'Myanmar',
-  NAM:'Namíbia', NRU:'Nauru', NPL:'Nepal', NIC:'Nicarágua',
-  NER:'Níger', NGA:'Nigéria', NOR:'Noruega',
-  NZL:'Nova Zelândia', OMN:'Omã', NLD:'Países Baixos',
-  PLW:'Palau', PSE:'Palestina', PAN:'Panamá',
-  PNG:'Papua-Nova Guiné', PAK:'Paquistão', PRY:'Paraguai',
-  PER:'Peru', POL:'Polônia', PRT:'Portugal', KEN:'Quênia',
-  KGZ:'Quirguistão', GBR:'Reino Unido',
-  CAF:'República Centro-Africana',
-  COD:'República Democrática do Congo',
-  DOM:'República Dominicana', CZE:'República Tcheca',
-  ROU:'Romênia', RWA:'Ruanda', RUS:'Rússia', WSM:'Samoa',
-  SMR:'San Marino', LCA:'Santa Lúcia',
-  KNA:'São Cristóvão e Névis', STP:'São Tomé e Príncipe',
-  VCT:'São Vicente e Granadinas', SEN:'Senegal',
-  SLE:'Serra Leoa', SRB:'Sérvia', SYC:'Seicheles',
-  SGP:'Singapura', SYR:'Síria', SOM:'Somália',
-  LKA:'Sri Lanka', SDN:'Sudão', SSD:'Sudão do Sul',
-  SWE:'Suécia', CHE:'Suíça', SUR:'Suriname', THA:'Tailândia',
-  TJK:'Tajiquistão', TZA:'Tanzânia', TLS:'Timor-Leste',
-  TGO:'Togo', TON:'Tonga', TTO:'Trinidad e Tobago',
-  TUN:'Tunísia', TKM:'Turcomenistão', TUR:'Turquia',
-  TUV:'Tuvalu', UKR:'Ucrânia', UGA:'Uganda', URY:'Uruguai',
-  UZB:'Uzbequistão', VUT:'Vanuatu', VAT:'Vaticano',
-  VEN:'Venezuela', VNM:'Vietnã', ZMB:'Zâmbia', ZWE:'Zimbábue',
-  JPN:'Japão', ECU:'Equador', KHM:'Camboja',
-  TWN:'Taiwan', XKX:'Kosovo'
+// Nomes em português associados aos códigos numéricos do mapa.
+const countries = {
+"004":"Afeganistão","008":"Albânia","012":"Argélia","024":"Angola",
+"032":"Argentina","036":"Austrália","040":"Áustria","031":"Azerbaijão",
+"044":"Bahamas","048":"Bahrein","050":"Bangladesh","051":"Armênia",
+"052":"Barbados","056":"Bélgica","060":"Bermudas","064":"Butão",
+"068":"Bolívia","070":"Bósnia e Herzegovina","072":"Botsuana",
+"076":"Brasil","084":"Belize","090":"Ilhas Salomão","096":"Brunei",
+"100":"Bulgária","104":"Myanmar","108":"Burundi","112":"Bielorrússia",
+"116":"Camboja","120":"Camarões","124":"Canadá","140":"República Centro-Africana",
+"144":"Sri Lanka","148":"Chade","152":"Chile","156":"China",
+"158":"Taiwan","170":"Colômbia","174":"Comores","178":"Congo",
+"180":"República Democrática do Congo","188":"Costa Rica","191":"Croácia",
+"192":"Cuba","196":"Chipre","203":"República Tcheca","204":"Benim",
+"208":"Dinamarca","214":"República Dominicana","218":"Equador",
+"222":"El Salvador","226":"Guiné Equatorial","231":"Etiópia",
+"232":"Eritreia","233":"Estônia","242":"Fiji","246":"Finlândia",
+"250":"França","262":"Djibuti","266":"Gabão","268":"Geórgia",
+"270":"Gâmbia","275":"Palestina","276":"Alemanha","288":"Gana",
+"296":"Kiribati","300":"Grécia","320":"Guatemala","324":"Guiné",
+"328":"Guiana","332":"Haiti","340":"Honduras","348":"Hungria",
+"352":"Islândia","356":"Índia","360":"Indonésia","364":"Irã",
+"368":"Iraque","372":"Irlanda","376":"Israel","380":"Itália",
+"384":"Costa do Marfim","388":"Jamaica","392":"Japão","398":"Cazaquistão",
+"400":"Jordânia","404":"Quênia","408":"Coreia do Norte",
+"410":"Coreia do Sul","414":"Kuwait","417":"Quirguistão",
+"418":"Laos","422":"Líbano","426":"Lesoto","428":"Letônia",
+"430":"Libéria","434":"Líbia","440":"Lituânia","442":"Luxemburgo",
+"450":"Madagascar","454":"Malaui","458":"Malásia","466":"Mali",
+"470":"Malta","478":"Mauritânia","480":"Maurício","484":"México",
+"496":"Mongólia","498":"Moldávia","499":"Montenegro","504":"Marrocos",
+"508":"Moçambique","512":"Omã","516":"Namíbia","524":"Nepal",
+"528":"Países Baixos","540":"Nova Caledônia","548":"Vanuatu",
+"554":"Nova Zelândia","558":"Nicarágua","562":"Níger","566":"Nigéria",
+"578":"Noruega","586":"Paquistão","591":"Panamá","598":"Papua-Nova Guiné",
+"600":"Paraguai","604":"Peru","608":"Filipinas","616":"Polônia",
+"620":"Portugal","624":"Guiné-Bissau","626":"Timor-Leste",
+"634":"Catar","642":"Romênia","643":"Rússia","646":"Ruanda",
+"682":"Arábia Saudita","686":"Senegal","688":"Sérvia",
+"694":"Serra Leoa","702":"Singapura","703":"Eslováquia",
+"704":"Vietnã","705":"Eslovênia","706":"Somália","710":"África do Sul",
+"716":"Zimbábue","724":"Espanha","728":"Sudão do Sul",
+"729":"Sudão","732":"Saara Ocidental","740":"Suriname",
+"748":"Eswatini","752":"Suécia","756":"Suíça","760":"Síria",
+"762":"Tajiquistão","764":"Tailândia","768":"Togo","776":"Tonga",
+"780":"Trinidad e Tobago","784":"Emirados Árabes Unidos","788":"Tunísia",
+"792":"Turquia","795":"Turcomenistão","800":"Uganda","804":"Ucrânia",
+"807":"Macedônia do Norte","818":"Egito","826":"Reino Unido",
+"834":"Tanzânia","840":"Estados Unidos","854":"Burkina Faso",
+"858":"Uruguai","860":"Uzbequistão","862":"Venezuela","887":"Iêmen",
+"894":"Zâmbia","010":"Antártida","016":"Samoa Americana",
+"020":"Andorra","028":"Antígua e Barbuda","050":"Bangladesh",
+"090":"Ilhas Salomão","166":"Ilhas Cocos","175":"Mayotte",
+"184":"Ilhas Cook","212":"Dominica","233":"Estônia",
+"239":"Geórgia do Sul e Ilhas Sandwich do Sul","254":"Guiana Francesa",
+"258":"Polinésia Francesa","260":"Terras Austrais e Antárticas Francesas",
+"275":"Palestina","292":"Gibraltar","304":"Groenlândia",
+"312":"Guadalupe","316":"Guam","334":"Ilha Heard e Ilhas McDonald",
+"336":"Vaticano","344":"Hong Kong","474":"Martinica",
+"492":"Mônaco","520":"Nauru","570":"Niue","580":"Ilhas Marianas do Norte",
+"585":"Palau","630":"Porto Rico","654":"Santa Helena",
+"659":"São Cristóvão e Névis","660":"Anguilla","662":"Santa Lúcia",
+"663":"São Martinho","670":"São Vicente e Granadinas",
+"674":"San Marino","678":"São Tomé e Príncipe","686":"Senegal",
+"690":"Seicheles","706":"Somália","740":"Suriname","772":"Tokelau",
+"798":"Tuvalu","876":"Wallis e Futuna","882":"Samoa",
+"887":"Iêmen","891":"Sérvia e Montenegro"
 };
 
-/* Variações conhecidas de nomes em inglês e nomes alternativos. */
+// Complementa países que podem ter códigos ou denominações diferentes.
 const aliases = {
-  unitedstates:'Estados Unidos',
-  unitedstatesofamerica:'Estados Unidos',
-  usa:'Estados Unidos',
-  russia:'Rússia',
-  russianfederation:'Rússia',
-  southafrica:'África do Sul',
-  southkorea:'Coreia do Sul',
-  northkorea:'Coreia do Norte',
-  ivorycoast:'Costa do Marfim',
-  czechia:'República Tcheca',
-  czechrepublic:'República Tcheca',
-  democraticrepublicofthecongo:'República Democrática do Congo',
-  drcongo:'República Democrática do Congo',
-  congo:'República do Congo',
-  republicofthecongo:'República do Congo',
-  iran:'Irã',
-  syria:'Síria',
-  turkiye:'Turquia',
-  turkey:'Turquia',
-  vietnam:'Vietnã',
-  laos:'Laos',
-  bolivia:'Bolívia',
-  venezuela:'Venezuela',
-  tanzania:'Tanzânia',
-  moldova:'Moldávia',
-  brunei:'Brunei',
-  brazil:'Brasil',
-  germany:'Alemanha',
-  netherlands:'Países Baixos',
-  theNetherlands:'Países Baixos',
-  holland:'Países Baixos',
-  chad:'Chade',
-  mauritania:'Mauritânia',
-  swaziland:'Eswatini',
-  easttimor:'Timor-Leste',
-  palestine:'Palestina',
-  palestinestate:'Palestina',
-  northmacedonia:'Macedônia do Norte',
-  cotedivoire:'Costa do Marfim',
-  capeverde:'Cabo Verde',
-  republicofserbia:'Sérvia',
-  unitedkingdom:'Reino Unido',
-  england:'Reino Unido'
+"czechia":"República Tcheca",
+"czech republic":"República Tcheca",
+"democratic republic of the congo":"República Democrática do Congo",
+"republic of the congo":"Congo",
+"congo":"Congo",
+"ivory coast":"Costa do Marfim",
+"cote d ivoire":"Costa do Marfim",
+"the netherlands":"Países Baixos",
+"netherlands":"Países Baixos",
+"holland":"Países Baixos",
+"chad":"Chade",
+"united states":"Estados Unidos",
+"united states of america":"Estados Unidos",
+"usa":"Estados Unidos",
+"united kingdom":"Reino Unido",
+"russian federation":"Rússia",
+"viet nam":"Vietnã",
+"vietnam":"Vietnã",
+"north korea":"Coreia do Norte",
+"south korea":"Coreia do Sul",
+"republic of korea":"Coreia do Sul",
+"iran":"Irã",
+"moldova":"Moldávia",
+"lao pdr":"Laos",
+"syrian arab republic":"Síria",
+"brunei darussalam":"Brunei",
+"eswatini":"Eswatini",
+"swaziland":"Eswatini",
+"micronesia":"Micronésia",
+"federated states of micronesia":"Micronésia",
+"macedonia":"Macedônia do Norte",
+"north macedonia":"Macedônia do Norte",
+"palestine":"Palestina",
+"east timor":"Timor-Leste",
+"cape verde":"Cabo Verde",
+"cabo verde":"Cabo Verde",
+"western sahara":"Saara Ocidental",
+"somaliland":"Somalilândia"
 };
 
-function addName(set, value) {
-  if (!value) return;
-  const n = norm(String(value));
-  if (!n) return;
-  set.add(n);
-
-  if (aliases[n]) set.add(norm(aliases[n]));
-
-  for (const [alias, target] of Object.entries(aliases)) {
-    if (norm(target) === n) set.add(norm(alias));
-  }
+function normalize(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " e ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
-/* Lê os nomes possíveis de cada região do GeoJSON. */
-function countryNames(f) {
-  const p = f && f.properties ? f.properties : {};
-  const names = new Set();
-
-  [
-    p.ADMIN, p.name, p.name_en, p.NAME, p.NAME_EN,
-    p.name_long, p.FORMAL_EN, p.BRK_NAME,
-    p.SOVEREIGNT, p.GEOUNIT
-  ].forEach(v => addName(names, v));
-
-  const codes = [
-    p.ISO_A3_EH, p.ISO_A3, p.ADM0_A3, p.SOV_A3
-  ].map(v => String(v || '').toUpperCase());
-
-  for (const code of codes) {
-    if (ptByIso3[code]) addName(names, ptByIso3[code]);
-  }
-
-  return names;
-}
-
-/* Determina um nome em português para o título da janela. */
-function propsName(f) {
-  const p = f.properties || {};
-  const codes = [
-    p.ISO_A3_EH, p.ISO_A3, p.ADM0_A3, p.SOV_A3
-  ].map(v => String(v || '').toUpperCase());
-
-  for (const code of codes) {
-    if (ptByIso3[code]) return ptByIso3[code];
-  }
-
-  const names = countryNames(f);
-  for (const key of Object.keys(worksByCountry)) {
-    if (names.has(norm(key))) return key;
-  }
-
-  return p.ADMIN || p.name || p.name_en || p.NAME || 'País';
-}
-
-function hasWorksForFeature(f) {
-  const names = countryNames(f);
-
-  return Object.keys(worksByCountry).some(key =>
-    names.has(norm(key)) ||
-    (aliases[norm(key)] && names.has(norm(aliases[norm(key)])))
-  );
-}
-
-function style(f) {
-  const has = hasWorksForFeature(f);
-
-  return {
-    color:'#8296a8',
-    weight:0.7,
-    fillColor:has ? '#55a879' : '#dce8ef',
-    fillOpacity:has ? 0.9 : 0.82
-  };
-}
-
-function getWorks(country, feature) {
-  const names = feature
-    ? countryNames(feature)
-    : new Set();
-
-  addName(names, country);
-
-  for (const key of Object.keys(worksByCountry)) {
-    if (
-      names.has(norm(key)) ||
-      norm(aliases[norm(key)] || '') === norm(country) ||
-      norm(aliases[norm(country)] || '') === norm(key)
-    ) {
-      return worksByCountry[key];
-    }
-  }
-
-  return [];
-}
-
-function showCountry(name, feature) {
-  const list = getWorks(name, feature);
-  document.getElementById('countryTitle').textContent = name;
-
-  document.getElementById('workCount').textContent = list.length
-    ? `${list.length} trabalho(s) enviado(s)`
-    : 'Nenhum trabalho registrado ainda';
-
-  const el = document.getElementById('works');
-  el.innerHTML = '';
-
-  if (!list.length) {
-    el.innerHTML = '<div class="empty">Ainda não há trabalhos cadastrados ainda para este país. Volte depois!</div>';
-  } else {
-    list.forEach(w => {
-      const card = document.createElement('article');
-      card.className = 'work';
-
-      const h = document.createElement('h3');
-      h.textContent = w.name || 'Aluno';
-
-      const p = document.createElement('p');
-      p.textContent = (w.filename || 'Arquivo') + ' • ' + (w.date || '');
-
-      card.append(h, p);
-
-      if (w.mimeType && w.mimeType.startsWith('image/') && w.url) {
-        const img = document.createElement('img');
-        img.className = 'preview';
-
-        const match = w.url.match(/\/d\/([a-zA-Z0-9_-]+)/)
-          || w.url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-
-        if (match) {
-          img.src = 'https://drive.google.com/thumbnail?id='
-            + match[1] + '&sz=w1000';
-        } else {
-          img.src = w.url;
-        }
-
-        img.alt = 'Trabalho enviado por ' + (w.name || 'aluno');
-        img.loading = 'lazy';
-        card.append(img);
-      }
-
-      const a = document.createElement('a');
-      a.href = w.url || '#';
-      a.target = '_blank';
-      a.rel = 'noopener';
-      a.textContent = w.mimeType === 'application/pdf'
-        ? 'Abrir PDF'
-        : 'Abrir arquivo';
-
-      card.append(a);
-      el.append(card);
-    });
-  }
-
-  document.getElementById('modal').classList.add('open');
-}
-
-document.getElementById('close').onclick = () =>
-  document.getElementById('modal').classList.remove('open');
-
-document.getElementById('modal').onclick = e => {
-  if (e.target.id === 'modal') e.currentTarget.classList.remove('open');
-};
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    document.getElementById('modal').classList.remove('open');
-  }
+const aliasesNormalized = {};
+Object.entries(aliases).forEach(([key,value]) => {
+  aliasesNormalized[normalize(key)] = value;
 });
 
-function setStatus(s) {
-  document.getElementById('status').textContent = s;
+function countryName(id) {
+  return countries[String(id).padStart(3,"0")] || "País não identificado";
+}
+
+function flagEmoji(name) {
+  const flags = {
+    "Brasil":"🇧🇷","Alemanha":"🇩🇪","África do Sul":"🇿🇦",
+    "Estados Unidos":"🇺🇸","China":"🇨🇳","Índia":"🇮🇳",
+    "Rússia":"🇷🇺","França":"🇫🇷","Japão":"🇯🇵",
+    "Países Baixos":"🇳🇱","Chade":"🇹🇩","Portugal":"🇵🇹",
+    "Reino Unido":"🇬🇧","Argentina":"🇦🇷","Chile":"🇨🇱",
+    "Austrália":"🇦🇺","Canadá":"🇨🇦","México":"🇲🇽",
+    "Espanha":"🇪🇸","Itália":"🇮🇹"
+  };
+  return flags[name] || "🌎";
+}
+
+const svg = d3.select("#map");
+const mapArea = document.getElementById("map-area");
+const panel = document.getElementById("panel-content");
+
+let width = 0, height = 0;
+let projection, path, worldGroup, countriesLayer, zoom;
+let features = [];
+let selectedId = null;
+let works = {};
+let mapReady = false;
+
+function resizeMap() {
+  if (!mapReady) return;
+  width = mapArea.clientWidth;
+  height = mapArea.clientHeight;
+  svg.attr("viewBox",`0 0 ${width} ${height}`)
+     .attr("width",width).attr("height",height);
+
+  projection = d3.geoNaturalEarth1()
+    .fitExtent([[12,12],[width-12,height-12]],{type:"Sphere"});
+  path = d3.geoPath(projection);
+
+  worldGroup.select(".sphere").attr("d",path);
+  countriesLayer.selectAll("path").attr("d",path);
+}
+
+function getCountryWorks(name) {
+  const wanted = normalize(name);
+  const keys = Object.keys(works);
+  const exact = keys.find(key => normalize(key) === wanted);
+  if (exact) return works[exact] || [];
+
+  const aliasMatch = keys.find(key => {
+    const normalizedKey = normalize(key);
+    const translated = aliasesNormalized[normalizedKey];
+    return translated && normalize(translated) === wanted;
+  });
+  if (aliasMatch) return works[aliasMatch] || [];
+
+  const aliasesForWanted = Object.entries(aliasesNormalized)
+    .filter(([,value]) => normalize(value) === wanted)
+    .map(([key]) => key);
+
+  const alternate = keys.find(key =>
+    aliasesForWanted.includes(normalize(key))
+  );
+  return alternate ? (works[alternate] || []) : [];
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  })[char]);
+}
+
+function drivePreviewUrl(url) {
+  const text = String(url || "");
+  const match = text.match(/\/file\/d\/([a-zA-Z0-9_-]+)/)
+    || text.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+  return match ? "https://drive.google.com/thumbnail?id=" +
+    encodeURIComponent(match[1]) + "&sz=w700" : "";
+}
+
+function renderWorks(name) {
+  const list = getCountryWorks(name);
+  if (!list.length) {
+    return `<div class="empty">
+      <p>Ainda não há trabalhos cadastrados para <strong>${escapeHTML(name)}</strong>.</p>
+      <p>Quando um aluno enviar um trabalho pelo formulário, ele aparecerá aqui.</p>
+    </div>`;
+  }
+
+  return `<div class="section">
+    <span class="badge">${list.length} trabalho(s) cadastrado(s)</span>
+    ${list.map(work => {
+      const url = String(work.url || "");
+      const filename = escapeHTML(work.filename || "Abrir arquivo");
+      const student = escapeHTML(work.name || "Aluno");
+      const date = escapeHTML(work.date || "");
+      const preview = work.mimeType && work.mimeType.startsWith("image/")
+        ? drivePreviewUrl(url) : "";
+
+      return `<article class="work-card">
+        <h4>${filename}</h4>
+        <p><strong>Aluno:</strong> ${student}</p>
+        ${date ? `<p><strong>Data de envio:</strong> ${date}</p>` : ""}
+        ${preview ? `<a href="${escapeHTML(url)}" target="_blank" rel="noopener">
+          <img class="preview" src="${escapeHTML(preview)}"
+          alt="Prévia de ${filename}" loading="lazy"
+          onerror="this.style.display='none'"></a>` : ""}
+        <a href="${escapeHTML(url)}" target="_blank" rel="noopener">
+          Abrir ou baixar trabalho ↗
+        </a>
+      </article>`;
+    }).join("")}
+  </div>`;
+}
+
+function showCountry(id) {
+  const key = String(id).padStart(3,"0");
+  const name = countryName(key);
+  selectedId = key;
+
+  countriesLayer.selectAll(".country")
+    .classed("selected",d => String(d.id).padStart(3,"0") === key);
+
+  const feature = features.find(d =>
+    String(d.id).padStart(3,"0") === key
+  );
+
+  panel.innerHTML = `
+    <div class="country-title">
+      <div class="flag">${flagEmoji(name)}</div>
+      <div><h2>${escapeHTML(name)}</h2>
+      <small>Atlas Mundial</small></div>
+    </div>
+    <div class="section"><h3>Trabalhos dos alunos</h3>
+      ${renderWorks(name)}
+    </div>
+    <p id="works-refresh" class="status"></p>
+    <footer>Os trabalhos são consultados na planilha conectada ao formulário. Os arquivos são abertos pelo Google Drive.</footer>
+  `;
+
+  if (feature) {
+    const bounds = path.bounds(feature);
+    const dx = bounds[1][0] - bounds[0][0];
+    const dy = bounds[1][1] - bounds[0][1];
+    const cx = (bounds[0][0] + bounds[1][0])/2;
+    const cy = (bounds[0][1] + bounds[1][1])/2;
+    const scale = Math.max(1,Math.min(5,0.7/Math.max(dx/width,dy/height)));
+    const transform = d3.zoomIdentity
+      .translate(width/2,height/2)
+      .scale(scale)
+      .translate(-cx,-cy);
+    svg.transition().duration(500).call(zoom.transform,transform);
+  }
+}
+
+function resetMap() {
+  selectedId = null;
+  countriesLayer.selectAll(".country").classed("selected",false);
+  svg.transition().duration(400).call(zoom.transform,d3.zoomIdentity);
+}
+
+function buildMap(world) {
+  width = mapArea.clientWidth;
+  height = mapArea.clientHeight;
+  svg.attr("width",width).attr("height",height);
+
+  projection = d3.geoNaturalEarth1()
+    .fitExtent([[12,12],[width-12,height-12]],{type:"Sphere"});
+  path = d3.geoPath(projection);
+
+  worldGroup = svg.append("g");
+  worldGroup.append("path")
+    .datum({type:"Sphere"})
+    .attr("class","ocean sphere")
+    .attr("d",path);
+
+  features = topojson.feature(world,world.objects.countries).features;
+
+  countriesLayer = worldGroup.append("g");
+  countriesLayer.selectAll(".country")
+    .data(features)
+    .join("path")
+    .attr("class","country")
+    .attr("d",path)
+    .attr("aria-label",d => countryName(d.id))
+    .on("click",function(event,d) {
+      event.stopPropagation();
+      showCountry(d.id);
+    });
+
+  zoom = d3.zoom()
+    .scaleExtent([1,8])
+    .on("zoom",event => worldGroup.attr("transform",event.transform));
+
+  svg.call(zoom);
+  svg.on("dblclick.zoom",null);
+
+  document.getElementById("zoom-in").onclick = () =>
+    svg.transition().duration(250).call(zoom.scaleBy,1.4);
+  document.getElementById("zoom-out").onclick = () =>
+    svg.transition().duration(250).call(zoom.scaleBy,1/1.4);
+  document.getElementById("reset").onclick = resetMap;
+
+  mapReady = true;
+  resizeMap();
+  document.getElementById("load-status").textContent =
+    "Mapa carregado. Selecione um país para consultar os trabalhos.";
 }
 
 function loadWorks() {
-  if (!API_URL.startsWith('https://script.google.com/')) {
-    setStatus('Mapa demonstrativo — falta conectar o Apps Script');
+  const callbackName = "atlasWorksCallback";
+  const oldScript = document.getElementById("works-script");
+  if (oldScript) oldScript.remove();
+
+  window[callbackName] = function(response) {
+    try {
+      works = response && response.works ? response.works : {};
+      const status = document.getElementById("load-status");
+      if (status) status.textContent =
+        "Trabalhos carregados. Selecione um país no mapa.";
+
+      if (selectedId) showCountry(selectedId);
+    } catch(error) {
+      showWorksError("Não foi possível interpretar os trabalhos recebidos.");
+    } finally {
+      delete window[callbackName];
+      const script = document.getElementById("works-script");
+      if (script) script.remove();
+    }
+  };
+
+  const script = document.createElement("script");
+  script.id = "works-script";
+  script.src = API_URL + "?action=list&callback=" + callbackName +
+    "&_=" + Date.now();
+  script.onerror = function() {
+    showWorksError("Não foi possível acessar os trabalhos. Confira a conexão e a publicação do Apps Script.");
+    delete window[callbackName];
+    script.remove();
+  };
+  document.head.appendChild(script);
+}
+
+function showWorksError(message) {
+  const status = document.getElementById("load-status");
+  if (status) {
+    status.textContent = message;
+    status.classList.add("error");
+  }
+}
+
+function searchCountry(term) {
+  const normalized = normalize(term);
+  if (!normalized) return;
+
+  const result = features.find(feature =>
+    normalize(countryName(feature.id)).includes(normalized)
+  );
+
+  if (result) {
+    showCountry(result.id);
     return;
   }
 
-  const cb = 'atlasCb' + Math.random().toString(36).slice(2);
+  const alias = aliasesNormalized[normalized];
+  if (alias) {
+    const byAlias = features.find(feature =>
+      normalize(countryName(feature.id)) === normalize(alias)
+    );
+    if (byAlias) {
+      showCountry(byAlias.id);
+      return;
+    }
+  }
 
-  window[cb] = data => {
-    worksByCountry = data.works || {};
-
-    if (countryLayer) countryLayer.setStyle(style);
-
-    setStatus('Trabalhos carregados');
-    delete window[cb];
-    script.remove();
-  };
-
-  const script = document.createElement('script');
-  script.src = API_URL + '?action=list&callback=' + cb;
-  script.onerror = () => setStatus('Não foi possível carregar os trabalhos');
-  document.body.append(script);
+  panel.innerHTML = `<div class="empty">
+    <h2>País não encontrado</h2>
+    <p>Verifique a grafia ou tente pesquisar pelo nome em português.</p>
+  </div>`;
 }
 
-fetch(GEOJSON_URL)
-  .then(r => {
-    if (!r.ok) throw Error('mapa');
-    return r.json();
-  })
-  .then(data => {
-    countryFeatures = data.features || [];
+document.getElementById("search").addEventListener("keydown",event => {
+  if (event.key === "Enter") searchCountry(event.target.value.trim());
+});
 
-    countryLayer = L.geoJSON(data, {
-      style,
-      onEachFeature: (f, l) => {
-        const n = propsName(f);
-        l.bindTooltip(n);
-
-        l.on({
-          mouseover: e => e.target.setStyle({
-            weight:1.8,
-            color:'#244c69',
-            fillOpacity:1
-          }),
-          mouseout: e => countryLayer.resetStyle(e.target),
-          click: () => showCountry(n, f)
-        });
-      }
-    }).addTo(map);
-
-    setStatus('Mapa pronto • clique em um país');
-    loadWorks();
-  })
-  .catch(() => setStatus('Falha ao carregar o mapa. Verifique sua conexão.'));
-
-document.getElementById('search').addEventListener('input', e => {
-  const q = norm(e.target.value);
-  if (!q || !countryLayer) return;
-
-  const found = countryFeatures.find(f => {
-    const names = countryNames(f);
-    return [...names].some(n => n.includes(q));
-  });
-
-  if (found) {
-    const layer = countryLayer.getLayers().find(l => l.feature === found);
-
-    if (layer) {
-      map.fitBounds(layer.getBounds(), {maxZoom:5});
-      layer.openTooltip();
+document.getElementById("search").addEventListener("input",event => {
+  const term = event.target.value.trim();
+  if (term.length >= 3) {
+    const normalized = normalize(term);
+    const result = features.find(feature =>
+      normalize(countryName(feature.id)).startsWith(normalized)
+    );
+    if (result) {
+      // A pesquisa não seleciona automaticamente enquanto se está digitando.
+      // Pressione Enter para abrir o país desejado.
     }
   }
 });
+
+Promise.all([
+  d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json")
+]).then(([world]) => {
+  buildMap(world);
+  loadWorks();
+}).catch(error => {
+  panel.innerHTML = `<div class="empty">
+    <h2>Não foi possível carregar o mapa</h2>
+    <p>Verifique a conexão com a internet e recarregue a página.</p>
+  </div>`;
+  console.error(error);
+});
+
+window.addEventListener("resize",resizeMap);
 </script>
 </body>
 </html>
